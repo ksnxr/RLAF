@@ -138,3 +138,4 @@ The other options can be found in function `def my_config()` in file `benchmark_
 
 # Minor notes
 1. We used `jax.numpy.linalg.solve` for calculating the inverse of the Fisher metric times a vector. However, using `jax.scipy.linalg.solve` can be even faster since we can benefit from the structure of the metric by setting `assume_a="pos"`.
+2. In `benchmark_time.py`, the time for jit compilation was mistakenly taken into considerations when benchmarking the running times, and may lead to slightly inaccurate results. However, we ran some random experiments using the code without the time for jit compilation, and the general conclusion seems to remain unchanged.

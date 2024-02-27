@@ -129,7 +129,7 @@ def get_kl(logits1, logits2, logger=None):
 
 
 def christoffel_fn(g, theta, v):
-    # adapted based on ChatGPT
+    # Adapted based on ChatGPT
     d_g = jax.jacfwd(g)(theta)
 
     # Compute the Christoffel symbols
