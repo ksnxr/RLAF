@@ -2,12 +2,14 @@ import os
 import numpy as np
 import jax
 import jax_models as jxm
+import jax.scipy.stats as jsps
 from get_ground_truth_samples import (
     get_lr_nuts_samples,
     get_banana_nuts_samples,
     get_gaussian_samples,
     get_squiggle_samples,
     get_funnel_samples,
+    get_1d_gaussian_samples
 )
 from find_map import map_finder
 from sacred import Experiment
@@ -62,6 +64,20 @@ def get_quantities(model, standardized, save_figures, show_progress, logger):
         np.save(map_file, hat_theta)
 
         diagnose = get_gaussian_samples(samples_file)
+
+    elif model == "1d_gaussian":
+        dim = 1
+        logp_fn = lambda theta: jsps.norm.logpdf(theta, loc=0.0, scale=1.0)
+
+        map_file = os.path.join(current_directory, f"map_estimates/{model}.npy")
+        samples_file = os.path.join(
+            current_directory, f"ground_truth_samples/{model}.npy"
+        )
+
+        hat_theta = np.zeros(dim)
+        np.save(map_file, hat_theta)
+
+        diagnose = get_1d_gaussian_samples(samples_file)
 
     elif model == "squiggle_easy":
         dim, a, Sigma, logp_fn, _, _, _ = jxm.squiggle("easy")

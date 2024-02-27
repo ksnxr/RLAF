@@ -39,9 +39,10 @@ The other options can be found in function `def my_config()` in file `regression
 10. `save_samples`: whether to save samples,
 11. `lr`: learning rate of MAP training,
 12. `weight_decay`: weight decay of MAP training,
-13. `representation`: representation to be used for nngeometry (only applies to `fisher_exp`)
+13. `representation`: representation to be used for nngeometry (only applies to `fisher_exp`),
+14. `standardized`: whether to use standardized data.
 
-> `regression_size.py` is similar, with the main difference being allowing to specify the number of hidden units using `num_hidden`.
+> `regression_size.py` is similar, with the main difference being using a data generation process and allowing to specify the number of hidden units using `num_hidden`.
 
 ## Obtaining Stan NUTS samples
 
@@ -63,5 +64,19 @@ The other options can be found in function `def my_config()` in file `get_stan_n
 7. `laplace_run_dir`: run directory of the results of `regression.py`,
 8. `sub_samples_size`: number of sub samples to use for calculating the evaluation metrics and generating the plots.
 
+## Running times under varying scenarios
+
+Run `plot_size.py`.
+> Note: requires having obtained the logs under varying scenarios
+
+An example command is as follows
+```
+python plot_size.py -F logs
+```
+where `logs` is the directory to save logs and other generated quantities.
+
+The other options can be found in function `def my_config()` in file `plot_size.py`. We describe the available option as follows
+1. `folder`: the path to the directory containing the logs.
+
 # Minor notes
-1. We directly used `torch.linalg.solve` for calculating the inverse of the Fisher metric times a vector. Since the metric is positive definite, it may be possible to achieve running time improvements by taking that into account in the implementation.
+1. We directly used `torch.linalg.solve` for calculating the inverse of the Fisher metric times a vector. Since the metric is positive definite, using `torch.linalg.cholesky` and `torch.cholesky_solve` may be better.

@@ -35,6 +35,7 @@ def my_config():
     lr = 1e-2
     weight_decay = 1e-5
     representation = "dense"
+    standardized = False
 
 
 @ex.automain
@@ -52,12 +53,17 @@ def my_main(
     lr,
     weight_decay,
     representation,
+    standardized,
     _log,
     _run,
     _seed,
 ):
     show = get_show_function(_log)
-    X_train, y_train, train_loader, X_plot = get_snelson_data(between=between)
+    if not standardized:
+        X_train, y_train, train_loader, X_plot = get_snelson_data(between=between, standardized=False)
+        X_mean, X_std, y_mean, y_std = None, None, None, None
+    else:
+        X_train, y_train, train_loader, X_plot, X_mean, X_std, y_mean, y_std = get_snelson_data(between=between, standardized=True)
 
     # deterministic MAP
     if deterministic_map:
@@ -100,6 +106,11 @@ def my_main(
         f_mu=f_map,
         pred_std=None,
         file_name=f"{between}_MAP",
+        standardized=standardized,
+        X_mean=X_mean,
+        X_std=X_std,
+        y_mean=y_mean,
+        y_std=y_std,
         run=_run,
     )
 
@@ -134,6 +145,7 @@ def my_main(
             torch.unsqueeze(la.mean, dim=0),
             la.sigma_noise.item(),
             between,
+            standardized,
             _log,
         )
         results["MAP"] = {"MSE": mse, "NLL": nll}
@@ -161,6 +173,11 @@ def my_main(
             f_mu=f_mu,
             pred_std=pred_std,
             file_name=f"{between}_linearized",
+            standardized=standardized,
+            X_mean=X_mean,
+            X_std=X_std,
+            y_mean=y_mean,
+            y_std=y_std,
             run=_run,
         )
 
@@ -178,6 +195,7 @@ def my_main(
             samples,
             la.sigma_noise.item(),
             between,
+            standardized,
             _log,
         )
         results["Full"] = {"MSE": mse, "NLL": nll}
@@ -196,6 +214,11 @@ def my_main(
             f_mu=f_mu,
             pred_std=pred_std,
             file_name=f"{between}_full_nn",
+            standardized=standardized,
+            X_mean=X_mean,
+            X_std=X_std,
+            y_mean=y_mean,
+            y_std=y_std,
             run=_run,
         )
 
@@ -265,6 +288,7 @@ def my_main(
                     samples,
                     la.sigma_noise.item(),
                     between,
+                    standardized,
                     _log,
                 )
                 results[name.capitalize()] = {
@@ -288,6 +312,11 @@ def my_main(
                     f_mu=f_mu,
                     pred_std=pred_std,
                     file_name=f"{between}_{name}",
+                    standardized=standardized,
+                    X_mean=X_mean,
+                    X_std=X_std,
+                    y_mean=y_mean,
+                    y_std=y_std,
                     run=_run,
                 )
 

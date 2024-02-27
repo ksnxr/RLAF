@@ -104,6 +104,14 @@ def get_gaussian_samples(samples_file=None):
     return ""
 
 
+def get_1d_gaussian_samples(samples_file=None):
+    np.random.seed(1)
+    samples = sps.norm.rvs(0.0, 1.0, 20000)
+    if samples_file is not None:
+        np.save(samples_file, samples)
+    return ""
+
+
 def get_squiggle_samples(samples_file=None, a=1.5, Sigma=np.eye(2)):
     np.random.seed(1)
     Sigma = np.asarray(Sigma)

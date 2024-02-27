@@ -63,7 +63,7 @@ The other options can be found in function `def my_config()` in file `samples.py
 11. `standardized`: only apply to logistic regression experiments, whether to apply standardization,
 13. `run_hessian_precision`: whether to run Laplace variant with negative Hessian as precision,
 14. `run_fisher_precision`: whether to run Laplace variant with Fisher as precision,
-15. `calc_metric`: whether to calculate wasserstein distance to the ground truth samples.
+15. `calc_metric`: whether to calculate Wasserstein distance to the ground truth samples.
 
 ## Generating plots
 
@@ -81,10 +81,25 @@ where `logs` is the directory to save logs and other generated quantities.
 
 The other options can be found in function `def my_config()` in file `get_geodesic_plots.py`. We describe the available options as follows
 1. `num_samples`: how many samples to obtain,
-2. `calc_metric`: whether to calculate wasserstein distance to the ground truth samples (require having run `get_quantities.py` for model `banana_hausdorff`),
+2. `calc_metric`: whether to calculate Wasserstein distance to the ground truth samples (require having run `get_quantities.py` for model `banana_hausdorff`),
 3. `seed`: random seed for generating samples
 
-### First subplot of Figure 4
+### Figure 3
+
+Run `bias_dim.py`.
+
+An example command is as follows
+```
+python bias_dim.py -F logs
+```
+where `logs` is the directory to save logs and other generated quantities.
+
+The other options can be found in function `def my_config()` in file `bias_dim.py`. We describe the available options as follows
+1. `euclidean`: whether to run ELA,
+2. `bergamin`: whether to run RLA-B,
+3. `repeats`: number of independent runs to repeat
+
+### First subplot of Figure 5
 
 Run `get_banana_plots.py`.
 
@@ -117,9 +132,9 @@ The other options can be found in function `def my_config()` in file `benchmark_
 6. `standardized`: only apply to logistic regression experiments, whether to apply standardization,
 7. `run_hessian_precision`: whether to run LA variant with negative Hessian as precision,
 8. `run_fisher_precision`: whether to run LA variant with Fisher as precision,
-9. `calc_metric`: whether to calculate wasserstein distance to the ground truth samples,
+9. `calc_metric`: whether to calculate Wasserstein distance to the ground truth samples,
 10. `save_samples`: whether to save the obtained samples,
 11. `save_times`: whether to save the running times.
 
 # Minor notes
-1. We used `jax.numpy.linalg.solve` for calculating the inverse of the Fisher metric times a vector. However, using `jax.scipy.linalg.solve` can be even faster since we can benefit from the structure of the metric by setting `assume_a=True`.
+1. We used `jax.numpy.linalg.solve` for calculating the inverse of the Fisher metric times a vector. However, using `jax.scipy.linalg.solve` can be even faster since we can benefit from the structure of the metric by setting `assume_a="pos"`.

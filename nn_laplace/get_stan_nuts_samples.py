@@ -36,7 +36,9 @@ def get_regression_nuts_samples(
 ):
     show = get_show_function(logger)
     with open(os.path.join(laplace_run_dir, "config.json"), "rb") as f:
-        between = json.load(f)["between"]
+        config_json = json.load(f)
+        between = config_json["between"]
+        standardized = config_json["standardized"]
     with open(os.path.join(laplace_run_dir, "run.json"), "rb") as f:
         results = json.load(f)["result"]
     sigma_noise = results["sigma_noise"]
@@ -49,7 +51,12 @@ def get_regression_nuts_samples(
     if os.path.exists(samples_path):
         samples = np.load(samples_path)
     else:
-        X, y, _, _ = get_snelson_data(between=between)
+        if not standardized:
+            X, y, _, _ = get_snelson_data(between=between, standardized=False)
+        else:
+            X, y, _, _, _, _, _, _ = get_snelson_data(
+                between=between, standardized=True
+            )
         N = X.shape[0]
 
         data = dict(
@@ -128,7 +135,15 @@ def get_regression_nuts_samples(
         samples = fit.draws_pd()[param_names].to_numpy()
         np.save(sneaky_artifact(run, subdir, samples_path), samples)
 
-    X_train, y_train, _, X_plot = get_snelson_data(between=between)
+    if not standardized:
+        X_train, y_train, _, X_plot = get_snelson_data(
+            between=between, standardized=False
+        )
+        X_mean, X_std, y_mean, y_std = None, None, None, None
+    else:
+        X_train, y_train, _, X_plot, X_mean, X_std, y_mean, y_std = get_snelson_data(
+            between=between, standardized=True
+        )
 
     def get_model():
         return torch.nn.Sequential(
@@ -152,12 +167,18 @@ def get_regression_nuts_samples(
             y_train=y_train,
             X_plot=X_plot,
             model=model,
+            between=between,
             samples=sub_samples,
             f_mu=None,
             pred_std=None,
             file_name=f"{between}_stan_nuts_samples_{repeat}",
             calc_fs=True,
             sigma_noise=sigma_noise,
+            standardized=standardized,
+            X_mean=X_mean,
+            X_std=X_std,
+            y_mean=y_mean,
+            y_std=y_std,
             run=run,
         )
 
@@ -167,6 +188,7 @@ def get_regression_nuts_samples(
             sub_samples,
             sigma_noise,
             between,
+            standardized,
             logger,
         )
         results[str(repeat)] = {"MSE": mse, "NLL": nll}

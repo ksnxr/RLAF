@@ -4,12 +4,11 @@ import torch
 from sacred import Experiment
 
 from utils import (
-    get_snelson_data,
-    get_snelson_data_test,
-    plot_regression,
+    get_regression_data,
     sneaky_artifact,
-    eval_regression,
+    eval_regression_data,
     get_show_function,
+    plot_regression_data,
 )
 from approximations.my_full import MyFullLaplace
 from approximations.bergamin import BergaminLaplace
@@ -32,10 +31,12 @@ def my_config():
     between = False
     deterministic_map = False
     save_samples = False
-    lr = 1e-2
-    weight_decay = 1e-5
+    lr = 1e-3
+    weight_decay = 1e-4
     num_hidden = 10
+    num_train = 150
     representation = "dense"
+    standardized = True
 
 
 @ex.automain
@@ -53,23 +54,43 @@ def my_main(
     lr,
     weight_decay,
     num_hidden,
+    num_train,
     representation,
+    standardized,
     _log,
     _run,
     _seed,
 ):
     show = get_show_function(_log)
-    X_train, y_train, train_loader, X_plot = get_snelson_data(between=between)
 
     # deterministic MAP
     if deterministic_map:
         torch.manual_seed(1)
+        
+    if not standardized:
+        X_train, y_train, train_loader, X_plot, X_test, y_test = get_regression_data(num_train=num_train, num_test=100, standardized=False)
+        X_mean, X_std, y_mean, y_std = None, None, None, None
     else:
-        torch.manual_seed(_seed)
+        X_train, y_train, train_loader, X_plot, X_test, y_test, X_mean, X_std, y_mean, y_std = get_regression_data(num_train=num_train, num_test=100, standardized=True)
+    
+    plot_regression_data(
+        X_train=X_train,
+        y_train=y_train,
+        plot_data=True,
+        file_name="data",
+        standardized=standardized,
+        X_mean=X_mean,
+        X_std=X_std,
+        y_mean=y_mean,
+        y_std=y_std,
+        run=_run,
+    )
 
     def get_model():
         return torch.nn.Sequential(
             torch.nn.Linear(1, num_hidden),
+            torch.nn.Tanh(),
+            torch.nn.Linear(num_hidden, num_hidden),
             torch.nn.Tanh(),
             torch.nn.Linear(num_hidden, 1),
         )
@@ -92,7 +113,7 @@ def my_main(
     show("MAP")
 
     f_map = model(X_plot).squeeze().detach().cpu().numpy()
-    plot_regression(
+    plot_regression_data(
         X_train=X_train,
         y_train=y_train,
         X_plot=X_plot,
@@ -101,14 +122,19 @@ def my_main(
         f_mu=f_map,
         pred_std=None,
         file_name=f"{between}_MAP",
+        standardized=standardized,
+        X_mean=X_mean,
+        X_std=X_std,
+        y_mean=y_mean,
+        y_std=y_std,
         run=_run,
     )
 
-    if save_samples:
-        torch.save(
-            model.state_dict(),
-            sneaky_artifact(_run, "samples", f"{between}_map.pt"),
-        )
+    # if save_samples:
+    #     torch.save(
+    #         model.state_dict(),
+    #         sneaky_artifact(_run, "samples", f"{between}_map.pt"),
+    #     )
 
     if laplaces:
         la = MyFullLaplace(model, "regression")
@@ -123,18 +149,23 @@ def my_main(
             neg_marglik.backward()
             hyper_optimizer.step()
 
+        # https://pytorch.org/docs/stable/generated/torch.Tensor.size.html
+        show(f"dim={la.mean.size(dim=0)}")
         show(
             f"sigma={la.sigma_noise.item():.2f}, prior precision={la.prior_precision.item():.2f}",
         )
         results["sigma_noise"] = la.sigma_noise.item()
         results["prior_precision"] = la.prior_precision.item()
 
-        mse, nll = eval_regression(
-            get_snelson_data_test,
+        mse, nll = eval_regression_data(
+            X_test,
+            y_test,
             model,
             torch.unsqueeze(la.mean, dim=0),
             la.sigma_noise.item(),
-            between,
+            standardized,
+            y_mean,
+            y_std,
             _log,
         )
         results["MAP"] = {"MSE": mse, "NLL": nll}
@@ -144,7 +175,8 @@ def my_main(
         prior_precision = la.prior_precision
 
         # "stochastic" sampling
-        torch.manual_seed(_seed)
+        if deterministic_map:
+            torch.manual_seed(_seed)
 
         f_mu, f_var = la(X_plot, pred_type="glm")
 
@@ -152,7 +184,7 @@ def my_main(
         f_sigma = f_var.squeeze().detach().sqrt().cpu().numpy()
         pred_std = np.sqrt(f_sigma**2 + la.sigma_noise.item() ** 2)
 
-        plot_regression(
+        plot_regression_data(
             X_train=X_train,
             y_train=y_train,
             X_plot=X_plot,
@@ -161,23 +193,31 @@ def my_main(
             f_mu=f_mu,
             pred_std=pred_std,
             file_name=f"{between}_linearized",
+            standardized=standardized,
+            X_mean=X_mean,
+            X_std=X_std,
+            y_mean=y_mean,
+            y_std=y_std,
             run=_run,
         )
 
         samples, f_mu, f_var = la(
             X_plot, pred_type="nn", link_approx="mc", n_samples=num_samples
         )
-        if save_samples:
-            torch.save(
-                samples, sneaky_artifact(_run, "samples", f"{between}_full_samples.pt")
-            )
+        # if save_samples:
+        #     torch.save(
+        #         samples, sneaky_artifact(_run, "samples", f"{between}_full_samples.pt")
+        #     )
 
-        mse, nll = eval_regression(
-            get_snelson_data_test,
+        mse, nll = eval_regression_data(
+            X_test,
+            y_test,
             model,
             samples,
             la.sigma_noise.item(),
-            between,
+            standardized,
+            y_mean,
+            y_std,
             _log,
         )
         results["Full"] = {"MSE": mse, "NLL": nll}
@@ -186,7 +226,7 @@ def my_main(
         f_sigma = f_var.squeeze().detach().sqrt().cpu().numpy()
         pred_std = np.sqrt(f_sigma**2 + la.sigma_noise.item() ** 2)
 
-        plot_regression(
+        plot_regression_data(
             X_train=X_train,
             y_train=y_train,
             X_plot=X_plot,
@@ -195,6 +235,11 @@ def my_main(
             f_mu=f_mu,
             pred_std=pred_std,
             file_name=f"{between}_full_nn",
+            standardized=standardized,
+            X_mean=X_mean,
+            X_std=X_std,
+            y_mean=y_mean,
+            y_std=y_std,
             run=_run,
         )
 
@@ -241,12 +286,12 @@ def my_main(
                 std_times = torch.std(times).item()
                 show(f"running time: mean: {mean_times}, std: {std_times}")
                 if save_samples:
-                    torch.save(
-                        samples,
-                        sneaky_artifact(
-                            _run, "samples", f"{between}_{name}_samples.pt"
-                        ),
-                    )
+                    # torch.save(
+                    #     samples,
+                    #     sneaky_artifact(
+                    #         _run, "samples", f"{between}_{name}_samples.pt"
+                    #     ),
+                    # )
                     torch.save(
                         num_evals,
                         sneaky_artifact(
@@ -258,12 +303,15 @@ def my_main(
                         sneaky_artifact(_run, "times", f"{between}_{name}_times.pt"),
                     )
 
-                mse, nll = eval_regression(
-                    get_snelson_data_test,
+                mse, nll = eval_regression_data(
+                    X_test,
+                    y_test,
                     model,
                     samples,
                     la.sigma_noise.item(),
-                    between,
+                    standardized,
+                    y_mean,
+                    y_std,
                     _log,
                 )
                 results[name.capitalize()] = {
@@ -277,7 +325,7 @@ def my_main(
                 f_sigma = f_var.squeeze().detach().sqrt().cpu().numpy()
                 pred_std = np.sqrt(f_sigma**2 + la.sigma_noise.item() ** 2)
 
-                plot_regression(
+                plot_regression_data(
                     X_train=X_train,
                     y_train=y_train,
                     X_plot=X_plot,
@@ -286,6 +334,11 @@ def my_main(
                     f_mu=f_mu,
                     pred_std=pred_std,
                     file_name=f"{between}_{name}",
+                    standardized=standardized,
+                    X_mean=X_mean,
+                    X_std=X_std,
+                    y_mean=y_mean,
+                    y_std=y_std,
                     run=_run,
                 )
 
