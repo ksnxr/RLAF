@@ -67,6 +67,8 @@ The other options can be found in function `def my_config()` in file `samples.py
 
 ## Generating plots
 
+For generating the plots of different methods on different models, see the previous descriptions.
+
 ### Figure 1
 
 Run `get_geodesic_plots.py`.
