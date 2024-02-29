@@ -136,7 +136,7 @@ def my_main(folder, _run):
     # https://stackoverflow.com/a/39473158
     plt.legend()
     ax2.set_xlabel("Number of data points")
-    ax2.set_ylabel("Number of seconds per sample")
+    ax2.set_ylabel("Average number of seconds per sample")
 
     # https://matplotlib.org/stable/users/explain/axes/axes_scales.html
     ax2.set_xscale("log")
