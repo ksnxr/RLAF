@@ -44,6 +44,23 @@ The other options can be found in function `def my_config()` in file `regression
 
 > `regression_size.py` is similar, with the main difference being using a data generation process and allowing to specify the number of hidden units using `num_hidden`.
 
+The following are commands that could reproduce the results as reported in the paper (omitting setting logging directories etc.):
+
+Snelson data, original data: (the other results for this can be reproduced by changing which algorithm to run and whether to set `between` to `True`, while keeping other settings the same)
+```
+python regression.py with bergamin=True monge=False fisher=True between=False deterministic_map=True save_samples=True num_samples=500
+```
+
+Snelson data, standardized data: (the other results for this can be reproduced by changing which algorithm to run and whether to set `between` to `True`, while keeping other settings the same)
+```
+python regression.py with bergamin=True monge=False fisher=True between=False deterministic_map=True num_samples=500 standardized=True weight_decay=1e-4
+```
+
+Scalability experiment: (the other results for this can be reproduced by changing which algorithm to run and `num_train`, `num_hidden`, while keeping other settings the same)
+```
+python regression_size.py with bergamin=True monge=False fisher=True deterministic_map=True num_samples=30 num_train=100 num_hidden=5 lr=1e-3 weight_decay=1e-4 num_epochs=50000 standardized=True
+```
+
 ## Obtaining Stan NUTS samples
 
 Run `get_stan_nuts_samples.py`.
