@@ -1,16 +1,16 @@
 # Environment
 
 We use [Sacred](https://github.com/IDSIA/sacred) to record the experiments. The Python version is `3.8.17`. The main dependencies are:
-* matplotlib
-* scipy
-* cmdstanpy
-* sacred
-* torch
+* matplotlib==3.7.3
+* scipy==1.10.1
+* cmdstanpy==1.1.0
+* sacred==0.8.2
+* torch==2.0.1
 * numpy==1.23.5
-* nngeometry
-* scikit-learn
+* nngeometry==0.3
+* scikit-learn==1.3.1
 
-Additionally, the package [Laplace](https://github.com/AlexImmer/Laplace/) needs to be downloaded here and installed.
+Additionally, the package [Laplace](https://github.com/AlexImmer/Laplace/, git commit id: f6af73668870834eee15893c27a250c71966495c) needs to be downloaded and installed.
 
 # Usage
 

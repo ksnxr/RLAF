@@ -2,19 +2,18 @@
 
 We use [Sacred](https://github.com/IDSIA/sacred) to record the experiments. The Python version is `3.11.5`. The main dependencies are:
 * jax==0.4.7
-* diffrax
-* matplotlib
-* scipy
-* pandas
-* pot
-* tqdm
+* diffrax==0.4.0
+* matplotlib==3.8.0
+* scipy==1.11.2
+* pandas==2.1.1
+* pot==0.9.1
+* tqdm==4.66.1
 * cmdstan
-* scikit-lern
-* cmdstanpy
-* sacred
+* scikit-learn==1.3.1
+* cmdstanpy==1.1.0
 * numpy==1.23.5
 * sacred==0.8.4
-* loky
+* loky==3.4.1
 
 # Usage
 
