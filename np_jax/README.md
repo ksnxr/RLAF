@@ -64,6 +64,8 @@ The other options can be found in function `def my_config()` in file `samples.py
 14. `run_fisher_precision`: whether to run Laplace variant with Fisher as precision,
 15. `calc_metric`: whether to calculate Wasserstein distance to the ground truth samples.
 
+> Note: under some circumstances the function `plot_marginal` is called for generating the plot. For ease of implementation, in `plot_marginal`, only the samples that fall inside the respective plotting limits are taken into account when generating the normalized histograms.
+
 ## Generating plots
 
 For generating the plots of different methods on different models, see the previous descriptions.
